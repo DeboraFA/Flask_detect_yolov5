@@ -1,0 +1,5 @@
+train: /content/drive/MyDrive/YOLO_training/prepare_dataset/REFUGE/train
+val: /content/drive/MyDrive/YOLO_training/prepare_dataset/REFUGE/test
+nc: 1
+names: ['disc']
+        

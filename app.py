@@ -5,69 +5,88 @@ import base64
 import numpy as np
 import onnxruntime as ort
 import torch
+import re
+import cv2
+import PIL
+from yolo_predictions import YOLO_Pred
 
 app = Flask(__name__)
 
-# Carrega o modelo ONNX
-session = ort.InferenceSession('model/yolov5.onnx')
-input_name = session.get_inputs()[0].name
-output_name = session.get_outputs()[0].name
-num_classes = 1
+# Carrega o modelo YOLO
+onnx_model = 'model/yolov5.onnx'
+data_yaml = 'model/data.yaml'
+yolo_pred = YOLO_Pred(onnx_model, data_yaml)
 
+# Variável de controle para o envio de imagens
+image_processing_active = True
+counter = 1
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/detect', methods=['POST'])
 def detect():
-    print('aaaaaaaaaaaaa')
+    global image_processing_active, counter
+    # Verifica se o processamento de imagem está ativo
+    if not image_processing_active:
+        print('parooooooooooou')
+        return jsonify({'message': 'Image processing stopped'})
+    
     # Extrai a imagem enviada pelo cliente
     image_data = request.json['image']
-    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
-    # image_data = request.files['image']
-    # image = Image.open(image_data)
+    # print('aaaaaaaaaaaaaaaaaaa')
+    # Verifica se o valor de image_data é uma string em base64 válida
+    if not base64.b64decode(image_data, validate=True):
+        return jsonify({'message': 'Invalid base64 string'})
 
-    # Preprocessa a imagem
-    image = image.resize((640, 640))
-    image_np = np.array(image).astype(np.float32) / 255.0
-    image_np = np.transpose(image_np, (2, 0, 1))
-    image_np = np.expand_dims(image_np, axis=0)
-    image_tensor = torch.from_numpy(image_np)
+    try:
+        # Converte a imagem base64 para array numpy
+        decoded_image = base64.b64decode(image_data)
+        np_arr = np.frombuffer(decoded_image, np.uint8)
+        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-    # Faz a inferência na imagem
-    output = session.run([output_name], {input_name: image_np})
-    output = np.squeeze(output)
+        image = cv2.resize(image, (640, 640))
 
-    # Filtra detecções com confiança menor que um limiar
-    threshold = 0.7
-    class_probs = torch.sigmoid(torch.from_numpy(output[:, 4:5]))
-    filter_mask = class_probs > threshold
-    class_probs = class_probs[filter_mask].numpy()
-    boxes = output[filter_mask.numpy().squeeze(), :4]
+        
+        # Faz a predição da imagem
+        bb_conf, boxes, index = yolo_pred.predictions(image)
+        # print(f'aquiiiiiiiii________{bb_conf}')
+        if bb_conf >= 60:
+            boxes_np = np.array(boxes).tolist()
+            print(f'------------nova imagem_{counter}------------')
+            print(len(boxes_np))
+            print(np.shape(boxes_np))
+            print('-----------------------------------')
+            # Desenha retângulos nos objetos detectados na imagem
+            for ind in index:
+                # print(counter)
+                x, y, w, h = boxes_np[ind]
+                x, y, w, h = int(x), int(y), int(w), int(h)
+                
+                # Desenha o retângulo na imagem usando OpenCV
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            if len(boxes_np)<50:
+                # Salva a imagem com os objetos detectados
+                cv2.imwrite(f'exemplo_{counter}.png', image)
+                # Incrementa o contador
+                counter += 1
 
-    if boxes.size > 0:
-        for box in boxes:
-            x, y, w, h = box
-            # Converte as coordenadas normalizadas para coordenadas de pixel
-            image_width, image_height = image.size
-            x1 = int(x * image_width)
-            y1 = int(y * image_height)
-            x2 = int((x + w) * image_width)
-            y2 = int((y + h) * image_height)
+        # Codifica a imagem de volta para base64
+        _, encoded_image = cv2.imencode('.jpg', image)
+        img_str = base64.b64encode(encoded_image).decode('utf-8')
 
-            # Desenha retângulos nos objetos detectados
-            draw = ImageDraw.Draw(image)
-            # Desenha o retângulo na imagem
-            draw.rectangle([(x1, y1), (x2, y2)], outline='red', width=2)
+        # Retorna a imagem com os objetos detectados em formato JSON
+        response_data = {'image': img_str}
+        return jsonify(response_data)
 
-    # Codifica a imagem de volta para base64
-    buffered = io.BytesIO()
-    image.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    except Exception as e:
+        return jsonify({'message': str(e)})
 
-    # Retorna a imagem com os objetos detectados em formato JSON
-    response_data = {'image': img_str}
-    return jsonify(response_data)
+@app.route('/stop', methods=['POST'])
+def stop():
+    global image_processing_active
+    image_processing_active = False
+    return jsonify({'message': 'Image processing stopped'})
 
 if __name__ == '__main__':
     app.run(debug=True)
