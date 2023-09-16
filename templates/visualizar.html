@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Imagens salvas</title>
+</head>
+<body>
+    <h1>Resultados do Exame</h1>
+    {% if imagens %}
+        <div class="imagens">
+            {% for imagem in imagens %}
+                <img src="{{ imagem }}" alt="Imagem {{ loop.index }}">
+            {% endfor %}
+        </div>
+        
+        {% if botao_visivel %}
+        <a href="/resultados" class="btn btn-primary">Resultados</a>
+        {% endif %}
+    {% else %}
+        <p>Nenhuma imagem salva.</p>
+    {% endif %}
+    <a href="/">Voltar ao Menu Inicial</a>
+</body>
+</html>

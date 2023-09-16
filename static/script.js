@@ -1,25 +1,23 @@
 var cameraStream = null;
 var video = document.getElementById('video');
 
-  // video constraints
-  const constraints = {
-    video: {
-      width: {
-        min: 1280,
-        ideal: 1920,
-        max: 2560,
-      },
-      height: {
-        min: 720,
-        ideal: 1080,
-        max: 1440,
-      },
-    },
-  };
-
-
 var recognitionRunning = false;
 var facingMode = 'environment'; // 'user' para câmera frontal, 'environment' para câmera traseira
+
+// Adicione a função detect no evento onload do vídeo
+document.getElementById('video').onload = detect;
+
+// Ajustar tamanho do vídeo para preencher a tela do celular
+function resizeVideo() {
+  var video = document.getElementById('video');
+  video.width = window.innerWidth;
+  video.height = window.innerHeight;
+}
+
+// Chamar a função resizeVideo quando a tela for redimensionada
+window.onresize = resizeVideo;
+resizeVideo(); // Chamar a função inicialmente para definir o tamanho correto
+
 
 function sendImage(imageData) {
   // Redimensiona a imagem para 640x640 pixels
@@ -71,10 +69,10 @@ function detect() {
 }
 
 function switchCamera() {
-  if (constraints.video.facingMode === 'user') {
-    constraints.video.facingMode = 'environment'; // Alterna para câmera traseira
+  if (facingMode === 'user') {
+    facingMode = 'environment'; // Alterna para câmera traseira
   } else {
-    constraints.video.facingMode = 'user'; // Alterna para câmera frontal
+    facingMode = 'user'; // Alterna para câmera frontal
   }
 
   stopCamera();

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ super() }} - Início{% endblock %}
+
+{% block content %}
+
+<div class="jumbotron">
+    <h1>Avaliação do Disco Óptico</h1>
+    <h2>Detecção do Glaucoma</h2>
+    <form action="{{ url_for('formulario') }}" method="GET">
+        <button type="submit" class="btn btn-lg btn-success">Iniciar Avaliação</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -7,16 +7,27 @@
 </head>
 <body>
 
+  
+
   <div align="center">
+    <h1 class="page-title">Detecção de Objetos com YOLO v5</h1>
+    <div id="button-container" align="center"></div>
     <button id="ligarCamera" onclick="startCamera()">Ligar</button>
     <button id="desligarCamera" onclick="stopCamera()">Desligar</button>
-    <button id="trocarCamera" onclick="switchCamera()">MudarCamera</button> <!-- Novo botão -->
-
+    <button id="trocarCamera" onclick="switchCamera()">MudarCamera</button> 
+    <a href="{{ url_for('reiniciar') }}">Início</a>
   </div>
 
+  {% if not image_processing_active %}
+  <!-- <p>Exame finalizado.</p> -->
+  <a href="/resultados">Visualizar Resultados</a>
+  {% else %}
+    <p>Exame em andamento...</p>
+  {% endif %}
+
   <div id="container">
-    <video id="video" width="1280" height="1280" autoplay></video>
-    <canvas id="canvas" width="1280" height="1280" style="display: none;"></canvas>
+    <video id="video" width="100%" height="auto" autoplay></video>
+    <canvas id="canvas" width="640" height="640" style="display: none;"></canvas>
     <div id="output"></div>
   </div>
 

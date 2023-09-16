@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exemplo de Imagens</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles2.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>Resultados Avaliação</h1>
+    </div>
+    
+    <div class="container">
+        {% set num_images = image_files|length %}
+        {% for i in range(num_images) %}
+            <div class="image-container">
+                <div class="image-item">
+                    <img class="image" src="{{ image_folder }}/{{ image_files[i] }}" alt="Imagem Original">
+                </div>
+                <div class="image-item">
+                    <img class="image" src="{{ segmented_image_paths[i] }}" alt="Imagem Segmentada">
+                </div>
+                <div class="image-item">
+                    <div class="info">
+                        <p>CDR: {{ cdrs[i] }}</p>
+                        <p>BVR: {{ bvrs[i] }}</p>
+                        <p>NRR: {{ nrrs[i] }}</p>
+                        <p>Diag: {{ preds[i] }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Botão para iniciar o download do HTML como PDF -->
+        <form action="/download-pdf" method="post">
+            <input type="submit" value="Download PDF">
+        </form>
+
+        <a href="/" class="centralizar-links">Voltar ao Menu Inicial</a>
+        <a href="/reiniciar_exame" class="centralizar-links">Fazer o exame novamente</a>
+
+    </div>
+</body>
+</html>
